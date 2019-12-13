@@ -112,6 +112,10 @@ class ArmMMU(BaseMMU):
     itb = ArmITB()
     dtb = ArmDTB()
 
+    def addWalkerCache(self, iwc, dwc):
+        self.itb.walker.port = iwc.cpu_side
+        self.dtb.walker.port = dwc.cpu_side
+
     @classmethod
     def walkerPorts(cls):
         return ["mmu.itb.walker.port", "mmu.dtb.walker.port"]

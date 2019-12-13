@@ -65,6 +65,10 @@ class X86MMU(BaseMMU):
     itb = X86TLB()
     dtb = X86TLB()
 
+    def addWalkerCache(self, iwc, dwc):
+        self.itb.walker.port = iwc.cpu_side
+        self.dtb.walker.port = dwc.cpu_side
+
     @classmethod
     def walkerPorts(cls):
         return ["mmu.itb.walker.port", "mmu.dtb.walker.port"]

@@ -46,6 +46,13 @@ class BaseMMU(SimObject):
     itb = Param.BaseTLB("Instruction TLB")
     dtb = Param.BaseTLB("Data TLB")
 
+    def addWalkerCache(self, iwc, dwc):
+        """
+        Wiring up the instruction walk cache and data walk cache to
+        the hardware table walkers.
+        """
+        pass
+
     @classmethod
     def walkerPorts(cls):
         return []
