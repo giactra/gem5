@@ -83,7 +83,7 @@ elif buildEnv['TARGET_ISA'] == 'mips':
     from m5.objects.MipsISA import MipsISA as ArchISA
     ArchISAsParam = VectorParam.MipsISA
 elif buildEnv['TARGET_ISA'] == 'arm':
-    from m5.objects.ArmTLB import ArmMMU as ArchMMU
+    from m5.objects.ArmTLB import DefaultArmMMU as ArchMMU
     from m5.objects.ArmInterrupts import ArmInterrupts as ArchInterrupts
     from m5.objects.ArmISA import ArmISA as ArchISA
     ArchISAsParam = VectorParam.ArmISA
@@ -223,7 +223,7 @@ class BaseCPU(ClockedObject):
             uncached_bus = cached_bus
         self.connectUncachedPorts(uncached_bus)
 
-        self.mmu.connectTLBPorts()
+        self.mmu.connectTLB()
 
     def addPrivateSplitL1Caches(self, ic, dc, iwc = None, dwc = None):
         self.icache = ic

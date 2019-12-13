@@ -1,6 +1,7 @@
 # -*- mode:python -*-
 
 # Copyright (c) 2009, 2013, 2015 ARM Limited
+# Copyright (c) 2018  Metempsy Technology Consulting
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -36,27 +37,30 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Authors: Ali Saidi
+#          Ivan Pizarro
 
 from m5.SimObject import SimObject
 from m5.params import *
 from m5.proxy import *
 from m5.objects.BaseTLB import BaseTLB, BaseMMU
 from m5.objects.ClockedObject import ClockedObject
+from m5.objects.IndexingPolicies import *
+from m5.objects.ReplacementPolicies import *
 
-# Basic stage 1 translation objects
+# Stage 1 translation objects
 class ArmTableWalker(ClockedObject):
     type = 'ArmTableWalker'
     cxx_class = 'ArmISA::TableWalker'
     cxx_header = "arch/arm/table_walker.hh"
-    is_stage2 =  Param.Bool(False, "Is this object for stage 2 translation?")
+    is_stage2 = Param.Bool(False, "Is this object for stage 2 translation?")
     num_squash_per_cycle = Param.Unsigned(2,
             "Number of outstanding walks that can be squashed per cycle")
-
-    # The port to the memory system. This port is ultimately belonging
-    # to the Stage2MMU, and shared by the two table walkers, but we
-    # access it through the ITB and DTB walked objects in the CPU for
-    # symmetry with the other ISAs.
-    port = MasterPort("Port used by the two table walkers")
+    max_inflight_walks = Param.Unsigned(1,
+            "Number of outstanding walks that can be issued")
+    # The walker will be connected as a one more level in the TLB hierarchy,
+    # thus slave and master ports are defined the same way
+    slave = VectorSlavePort("Port closer to the CPU side")
+    master = MasterPort("Port closer to memory side")
 
     sys = Param.System(Parent.any, "system object parameter")
 
@@ -65,57 +69,70 @@ class ArmTLB(BaseTLB):
     cxx_class = 'ArmISA::TLB'
     cxx_header = "arch/arm/tlb.hh"
     sys = Param.System(Parent.any, "system object parameter")
-    size = Param.Int(64, "TLB size")
-    walker = Param.ArmTableWalker(ArmTableWalker(), "HW Table walker")
+    size = Param.MemorySize(str(64), "Number of TLB entries")
+    assoc = Param.Int(1, "TLB associativity")
     is_stage2 = Param.Bool(False, "Is this a stage 2 TLB?")
-
-# Stage 2 translation objects, only used when virtualisation is being used
-class ArmStage2TableWalker(ArmTableWalker):
-    is_stage2 = True
-
-class ArmStage2TLB(ArmTLB):
-    size = 32
-    walker = ArmStage2TableWalker()
-    is_stage2 = True
-
-class ArmStage2MMU(SimObject):
-    type = 'ArmStage2MMU'
-    cxx_class = 'ArmISA::Stage2MMU'
-    cxx_header = 'arch/arm/stage2_mmu.hh'
-    tlb = Param.ArmTLB("Stage 1 TLB")
-    stage2_tlb = Param.ArmTLB("Stage 2 TLB")
-
-    sys = Param.System(Parent.any, "system object parameter")
-
-class ArmStage2IMMU(ArmStage2MMU):
-    # We rely on the itb being a parameter of the CPU, and get the
-    # appropriate object that way
-    tlb = Parent.any
-    stage2_tlb = ArmStage2TLB()
-
-class ArmStage2DMMU(ArmStage2MMU):
-    # We rely on the dtb being a parameter of the CPU, and get the
-    # appropriate object that way
-    tlb = Parent.any
-    stage2_tlb = ArmStage2TLB()
-
-class ArmITB(ArmTLB):
-    stage2_mmu = ArmStage2IMMU()
-
-class ArmDTB(ArmTLB):
-    stage2_mmu = ArmStage2DMMU()
+    allow_partial_translations = Param.Bool(False,
+        "Allow storing partial translation from the walker")
+    lat = Param.Int(0, "Latency of an access to the TLB")
+    next_tlb = Param.ArmTLB(NULL, "Next TLB level")
+    stage2tlb = Param.ArmTLB(NULL, "Pointer to the stage 2 TLB")
+    walker = Param.ArmTableWalker(NULL, "Table Walker");
+    level = Param.Unsigned(1, "TLB level")
+    indexing_policy = Param.BaseIndexingPolicy(SetAssociative(entry_size = 1),
+        "Indexing policy")
+    replacement_policy = Param.BaseReplacementPolicy(LRURP(),
+        "Replacement policy")
 
 class ArmMMU(BaseMMU):
     type = 'ArmMMU'
     cxx_class = 'ArmISA::MMU'
-    cxx_header = 'arch/arm/tlb.hh'
-    itb = ArmITB()
-    dtb = ArmDTB()
+    cxx_header = 'arch/arm/mmu.hh'
+
+    stage1_tlbs = VectorParam.ArmTLB([], "ARM TLB array for Stage 1")
+    stage2_tlbs = VectorParam.ArmTLB([], "ARM TLB array for Stage 2")
+
+    stage1_walkers = VectorParam.ArmTableWalker([], "S1 walkers")
+    stage2_walkers = VectorParam.ArmTableWalker([], "S2 walkers")
+
+    sys = Param.System(Parent.any, "system object parameter")
 
     def addWalkerCache(self, iwc, dwc):
-        self.itb.walker.port = iwc.cpu_side
-        self.dtb.walker.port = dwc.cpu_side
+        self.itb.walker.master = iwc.cpu_side
+        self.dtb.walker.master = dwc.cpu_side
 
     @classmethod
     def walkerPorts(cls):
-        return ["mmu.itb.walker.port", "mmu.dtb.walker.port"]
+        return [ "mmu.itb.walker.master", "mmu.dtb.walker.master" ]
+
+    def connectTLB(self):
+        for stage1_tlb in self.stage1_tlbs:
+            if stage1_tlb.next_tlb is not NULL:
+                stage1_tlb.master = stage1_tlb.next_tlb.slave
+            else:
+                stage1_tlb.master = stage1_tlb.walker.slave
+
+        for stage2_tlb in self.stage2_tlbs:
+            if stage2_tlb.next_tlb is not NULL:
+                stage2_tlb.master = stage2_tlb.next_tlb.slave
+            else:
+                stage2_tlb.master = stage2_tlb.walker.slave
+
+class DefaultArmMMU(ArmMMU):
+    # Table Walkers
+    _itb_walker = ArmTableWalker()
+    _dtb_walker = ArmTableWalker()
+    _itb_stage2_walker = ArmTableWalker(is_stage2=True)
+    _dtb_stage2_walker = ArmTableWalker(is_stage2=True)
+
+    # TLBs
+    _itb_stage2 = ArmTLB(is_stage2=True, walker=_itb_stage2_walker)
+    _dtb_stage2 = ArmTLB(is_stage2=True, walker=_dtb_stage2_walker)
+    itb = ArmTLB(stage2tlb=_itb_stage2, walker=_itb_walker)
+    dtb = ArmTLB(stage2tlb=_dtb_stage2, walker=_dtb_walker)
+
+    stage1_tlbs = [ itb, dtb ]
+    stage2_tlbs = [ _itb_stage2, _dtb_stage2 ]
+
+    stage1_walkers = [ _itb_walker, _dtb_walker ]
+    stage2_walkers = [ _itb_stage2_walker, _dtb_stage2_walker ]

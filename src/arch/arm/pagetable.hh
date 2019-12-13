@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010, 2012-2013 ARM Limited
+ * Copyright (c) 2018 Metempsy Technology Consulting
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -38,6 +39,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Authors: Ali Saidi
+ *          Ivan Pizarro
  */
 
 #ifndef __ARCH_ARM_PAGETABLE_H__
@@ -48,7 +50,7 @@
 #include "arch/arm/isa_traits.hh"
 #include "arch/arm/utility.hh"
 #include "arch/arm/vtophys.hh"
-#include "sim/serialize.hh"
+#include "mem/cache/replacement_policies/base.hh"
 
 namespace ArmISA {
 
@@ -83,7 +85,7 @@ enum LookupLevel {
 };
 
 // ITB/DTB table entry
-struct TlbEntry : public Serializable
+struct TlbEntry
 {
   public:
     enum class MemoryType : std::uint8_t {
@@ -105,10 +107,10 @@ struct TlbEntry : public Serializable
     Addr vpn;               // Virtual Page Number
     uint64_t attributes;    // Memory attributes formatted for PAR
 
-    LookupLevel lookupLevel;    // Lookup level where the descriptor was fetched
-                                // from.  Used to set the FSR for faults
-                                // occurring while the long desc. format is in
-                                // use (AArch32 w/ LPAE and AArch64)
+    LookupLevel lookupLevel; // Lookup level where the descriptor was fetched
+                             // from.  Used to set the FSR for faults
+                             // occurring while the long desc. format is in
+                             // use (AArch32 w/ LPAE and AArch64)
 
     uint16_t asid;          // Address Space Identifier
     uint8_t vmid;           // Virtual machine Identifier
@@ -146,16 +148,19 @@ struct TlbEntry : public Serializable
     bool xn;                // Execute Never
     bool pxn;               // Privileged Execute Never (LPAE only)
 
+    bool partial;         // Is a partial translation from the PTW
+    unsigned int index;
+
     //Construct an entry that maps to physical address addr for SE mode
     TlbEntry(Addr _asn, Addr _vaddr, Addr _paddr,
              bool uncacheable, bool read_only) :
-         pfn(_paddr >> PageShift), size(PageBytes - 1), vpn(_vaddr >> PageShift),
+         pfn(_paddr >> PageShift), size(PageBytes-1), vpn(_vaddr >> PageShift),
          attributes(0), lookupLevel(L1), asid(_asn), vmid(0), N(0),
          innerAttrs(0), outerAttrs(0), ap(read_only ? 0x3 : 0), hap(0x3),
          domain(DomainType::Client),  mtype(MemoryType::StronglyOrdered),
          longDescFormat(false), isHyp(false), global(false), valid(true),
          ns(true), nstid(true), el(EL0), nonCacheable(uncacheable),
-         shareable(false), outerShareable(false), xn(0), pxn(0)
+         shareable(false), outerShareable(false), xn(0), pxn(0), partial(false)
     {
         // no restrictions by default, hap = 0x3
 
@@ -170,7 +175,7 @@ struct TlbEntry : public Serializable
          domain(DomainType::Client), mtype(MemoryType::StronglyOrdered),
          longDescFormat(false), isHyp(false), global(false), valid(false),
          ns(true), nstid(true), el(EL0), nonCacheable(false),
-         shareable(false), outerShareable(false), xn(0), pxn(0)
+         shareable(false), outerShareable(false), xn(0), pxn(0), partial(false)
     {
         // no restrictions by default, hap = 0x3
 
@@ -191,20 +196,22 @@ struct TlbEntry : public Serializable
 
     bool
     match(Addr va, uint8_t _vmid, bool hypLookUp, bool secure_lookup,
-          ExceptionLevel target_el) const
+          ExceptionLevel target_el, bool _partial = false) const
     {
-        return match(va, 0, _vmid, hypLookUp, secure_lookup, true, target_el);
+        return match(va, 0, _vmid, hypLookUp, secure_lookup, true, target_el,
+                     _partial);
     }
 
     bool
     match(Addr va, uint16_t asn, uint8_t _vmid, bool hypLookUp,
-          bool secure_lookup, bool ignore_asn, ExceptionLevel target_el) const
+          bool secure_lookup, bool ignore_asn, ExceptionLevel target_el,
+          bool _partial = false) const
     {
         bool match = false;
         Addr v = vpn << N;
 
         if (valid && va >= v && va <= v + size && (secure_lookup == !nstid) &&
-            (hypLookUp == isHyp))
+            (hypLookUp == isHyp) && (_partial == partial))
         {
             match = checkELMatch(target_el);
 
@@ -277,9 +284,9 @@ struct TlbEntry : public Serializable
     }
 
     void
-    setAttributes(bool lpae)
+    setAttributes()
     {
-        attributes = lpae ? (1 << 11) : 0;
+        attributes = longDescFormat ? (1 << 11) : 0;
         updateAttributes();
     }
 
@@ -287,76 +294,160 @@ struct TlbEntry : public Serializable
     print() const
     {
         return csprintf("%#x, asn %d vmn %d hyp %d ppn %#x size: %#x ap:%d "
-                        "ns:%d nstid:%d g:%d el:%d", vpn << N, asid, vmid,
-                        isHyp, pfn << N, size, ap, ns, nstid, global, el);
+                        "ns:%d nstid:%d g:%d el:%d attr:%#lx", vpn << N, asid,
+                        vmid, isHyp, pfn << N, size, ap, ns, nstid, global,
+                        el, attributes);
     }
-
-    void
-    serialize(CheckpointOut &cp) const override
-    {
-        SERIALIZE_SCALAR(longDescFormat);
-        SERIALIZE_SCALAR(pfn);
-        SERIALIZE_SCALAR(size);
-        SERIALIZE_SCALAR(vpn);
-        SERIALIZE_SCALAR(asid);
-        SERIALIZE_SCALAR(vmid);
-        SERIALIZE_SCALAR(isHyp);
-        SERIALIZE_SCALAR(N);
-        SERIALIZE_SCALAR(global);
-        SERIALIZE_SCALAR(valid);
-        SERIALIZE_SCALAR(ns);
-        SERIALIZE_SCALAR(nstid);
-        SERIALIZE_SCALAR(nonCacheable);
-        SERIALIZE_ENUM(lookupLevel);
-        SERIALIZE_ENUM(mtype);
-        SERIALIZE_SCALAR(innerAttrs);
-        SERIALIZE_SCALAR(outerAttrs);
-        SERIALIZE_SCALAR(shareable);
-        SERIALIZE_SCALAR(outerShareable);
-        SERIALIZE_SCALAR(attributes);
-        SERIALIZE_SCALAR(xn);
-        SERIALIZE_SCALAR(pxn);
-        SERIALIZE_SCALAR(ap);
-        SERIALIZE_SCALAR(hap);
-        uint8_t domain_ = static_cast<uint8_t>(domain);
-        paramOut(cp, "domain", domain_);
-    }
-    void
-    unserialize(CheckpointIn &cp) override
-    {
-        UNSERIALIZE_SCALAR(longDescFormat);
-        UNSERIALIZE_SCALAR(pfn);
-        UNSERIALIZE_SCALAR(size);
-        UNSERIALIZE_SCALAR(vpn);
-        UNSERIALIZE_SCALAR(asid);
-        UNSERIALIZE_SCALAR(vmid);
-        UNSERIALIZE_SCALAR(isHyp);
-        UNSERIALIZE_SCALAR(N);
-        UNSERIALIZE_SCALAR(global);
-        UNSERIALIZE_SCALAR(valid);
-        UNSERIALIZE_SCALAR(ns);
-        UNSERIALIZE_SCALAR(nstid);
-        UNSERIALIZE_SCALAR(nonCacheable);
-        UNSERIALIZE_ENUM(lookupLevel);
-        UNSERIALIZE_ENUM(mtype);
-        UNSERIALIZE_SCALAR(innerAttrs);
-        UNSERIALIZE_SCALAR(outerAttrs);
-        UNSERIALIZE_SCALAR(shareable);
-        UNSERIALIZE_SCALAR(outerShareable);
-        UNSERIALIZE_SCALAR(attributes);
-        UNSERIALIZE_SCALAR(xn);
-        UNSERIALIZE_SCALAR(pxn);
-        UNSERIALIZE_SCALAR(ap);
-        UNSERIALIZE_SCALAR(hap);
-        uint8_t domain_;
-        paramIn(cp, "domain", domain_);
-        domain = static_cast<DomainType>(domain_);
-    }
-
 };
 
+typedef std::shared_ptr<TlbEntry> TlbEntryPtr;
 
+class TlbEntryRepl : public ReplaceableEntry
+{
+    private:
+        TlbEntryPtr data;
 
+    public:
+        TlbEntryPtr getData() {
+            return data;
+        }
+        void setEntry(TlbEntryPtr _data) {
+            data = _data;
+        }
+
+        void flush() {
+            setEntry(nullptr);
+        }
+};
+
+const std::string s_memtypes[] = { "Device", "Normal" };
+
+enum class DeviceType : std::uint8_t {
+    GRE,
+    nGRE,
+    nGnRE,
+    nGnRnE
+};
+
+const std::string s_devicetypes[] = { "GRE", "nGRE", "nGnRE", "nGnRnE" };
+
+enum class MemAttr : std::uint8_t {
+    NC = 0, // Non-cacheable
+    RESERVED = 1,
+    WT = 2, // Write-through
+    WB = 3  // Write-back
+};
+
+const std::string s_memattrs[] = { "NC", "RESERVED", "WT", "WB" };
+
+enum class MemHint : std::uint8_t {
+    No,  // No Read-Allocate, No Write-Allocate
+    WA,  // No Read-Allocate, Write-Allocate
+    RA,  // Read-Allocate, No Write-Allocate
+    RWA, // Read-Allocate, Write-Allocate
+    RESERVED
+};
+
+const std::string s_memhints[] = { "No", "WA", "RA", "RWA", "RESERVED" };
+
+typedef struct {
+    bool page_table_walk;
+    bool secondstage;
+    bool s2fs1walk;
+    int level;
+} AccessDescriptor;
+
+typedef struct {
+    Addr physicaladdress;
+    bool ns;
+} FullAddress;
+
+typedef struct Permissions {
+    uint8_t ap; // Access permission bits
+    bool    xn; // Execute-never bit
+    bool   xxn; // [ARMv8.2] Extended execute-never bit for stage 2
+    bool   pxn; // Privileged execute-never bit
+
+    Permissions() :
+        ap(0), xn(false), xxn(false), pxn(false) {
+    }
+} Permissions;
+
+typedef struct MemAttrHints {
+    MemAttr attrs;
+    MemHint hints;
+    bool transient;
+
+    MemAttrHints() :
+        attrs(MemAttr::RESERVED), hints(MemHint::RESERVED), transient(false) {
+    }
+} MemAttrHints;
+
+typedef struct MemoryAttributes {
+    TlbEntry::MemoryType type;
+    DeviceType   device; // For Device memory types
+    MemAttrHints inner;  // Inner hints and attributes
+    MemAttrHints outer;  // Outer hints and attributes
+    bool         shareable;
+    bool         outershareable;
+    uint8_t      attr;  // Memory attributes to fill PAR upper bits
+
+    MemoryAttributes() :
+        shareable(false), outershareable(false), attr(0) {
+    }
+    ~MemoryAttributes() {
+    }
+} MemoryAttributes;
+
+struct AddressDescriptor {
+    Fault             fault;
+    MemoryAttributes* memattrs;
+    FullAddress       paddress;
+    Addr              vaddress;
+
+    AddressDescriptor() :
+        fault(NoFault), memattrs(new MemoryAttributes()), vaddress(0)
+    {
+    }
+
+    ~AddressDescriptor() {
+        delete memattrs;
+    }
+
+    bool isFault() {
+        return (fault != NoFault);
+    }
+};
+
+struct TLBRecord
+{
+    Permissions          perms;
+    bool                 nG;         // '0' = Global, '1' = not Global
+    TlbEntry::DomainType domain;     // Access Domain (AArch32)
+    bool                 contiguous; // Contiguous bit from page table
+    LookupLevel          level;      // AArch32 Short-descriptor format
+                                     //  Indicates Section/Page
+    int                  blocksize;  // Size of memory translateble KB
+    bool                 CnP;        // [ARMv8.2] TLB entry can be
+                                     // shared between different PEs
+    std::shared_ptr<AddressDescriptor> addrdesc;
+
+    TLBRecord() :
+        nG(false), domain(TlbEntry::DomainType::Client), contiguous(false),
+        level(L0), blocksize(0), CnP(false), addrdesc(NULL)
+    {
+    }
+
+    TLBRecord(const std::shared_ptr<AddressDescriptor> &_addrdesc) :
+        nG(false), domain(TlbEntry::DomainType::Client), contiguous(false),
+        level(L0), blocksize(0), CnP(false)
+    {
+        addrdesc = _addrdesc;
+    }
+
+    ~TLBRecord() {
+    }
+};
 }
 #endif // __ARCH_ARM_PAGETABLE_H__
 

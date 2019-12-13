@@ -210,7 +210,7 @@ inSecureState(ThreadContext *tc)
         scr, tc->readMiscReg(MISCREG_CPSR));
 }
 
-inline bool
+bool
 isSecureBelowEL3(ThreadContext *tc)
 {
     SCR scr = tc->readMiscReg(MISCREG_SCR_EL3);

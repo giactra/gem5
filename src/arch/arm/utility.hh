@@ -265,7 +265,7 @@ bool inSecureState(ThreadContext *tc);
  * Differs from inSecureState in that it ignores the current EL
  * or Mode in considering security state.
  */
-inline bool isSecureBelowEL3(ThreadContext *tc);
+bool isSecureBelowEL3(ThreadContext *tc);
 
 bool longDescFormatInUse(ThreadContext *tc);
 

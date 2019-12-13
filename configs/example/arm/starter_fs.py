@@ -75,9 +75,9 @@ cpu_types = {
 
     "atomic" : ( AtomicSimpleCPU, None, None, None, None),
     "minor" : (MinorCPU,
-               devices.L1I, devices.L1D,
-               devices.WalkCache,
-               devices.L2),
+               None, None,
+               None,
+               None),
     "hpi" : ( HPI.HPI,
               HPI.HPI_ICache, HPI.HPI_DCache,
               HPI.HPI_WalkCache,
@@ -102,7 +102,8 @@ def create(args):
     cpu_class = cpu_types[args.cpu][0]
     mem_mode = cpu_class.memory_mode()
     # Only simulate caches when using a timing CPU (e.g., the HPI model)
-    want_caches = True if mem_mode == "timing" else False
+    #want_caches = True if mem_mode == "timing" else False
+    want_caches = False
 
     system = devices.simpleSystem(LinuxArmSystem,
                                   want_caches,

@@ -2031,6 +2031,8 @@ ISA::setMiscReg(int misc_reg, RegVal val, ThreadContext *tc)
                     Addr paddr = req->getPaddr();
                     uint64_t attr = getDTBPtr(tc)->getAttr();
                     uint64_t attr1 = attr >> 56;
+                    DPRINTF(MiscRegs, " - attr:  %#x\n", attr);
+                    DPRINTF(MiscRegs, " - attr1: %#x\n", attr1);
                     if (!attr1 || attr1 ==0x44) {
                         attr |= 0x100;
                         attr &= ~ uint64_t(0x80);

@@ -1334,11 +1334,11 @@ class HPI_FUPool(MinorFUPool):
         HPI_MiscFU() # 6
         ]
 
-class HPI_DTB(ArmDTB):
-    size = 256
+class HPI_DTB(ArmTLB):
+    size = str(256)
 
-class HPI_ITB(ArmITB):
-    size = 256
+class HPI_ITB(ArmTLB):
+    size = str(256)
 
 class HPI_WalkCache(Cache):
     data_latency = 4
