@@ -93,8 +93,8 @@ BaseO3CPU::regStats()
 template <class Impl>
 FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
     : BaseO3CPU(params),
-      itb(params->itb),
-      dtb(params->dtb),
+      itb(params->mmu->itb),
+      dtb(params->mmu->dtb),
       tickEvent([this]{ tick(); }, "FullO3CPU tick",
                 false, Event::CPU_Tick_Pri),
       threadExitEvent([this]{ exitThreads(); }, "FullO3CPU exit threads",

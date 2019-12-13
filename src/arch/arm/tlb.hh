@@ -53,6 +53,7 @@
 #include "mem/request.hh"
 #include "params/ArmMMU.hh"
 #include "params/ArmTLB.hh"
+#include "params/ArmMMU.hh"
 #include "sim/probe/pmu.hh"
 
 class ThreadContext;

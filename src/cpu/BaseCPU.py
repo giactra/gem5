@@ -63,37 +63,37 @@ from m5.objects.Platform import Platform
 default_tracer = ExeTracer()
 
 if buildEnv['TARGET_ISA'] == 'alpha':
-    from m5.objects.AlphaTLB import AlphaDTB as ArchDTB, AlphaITB as ArchITB
+    from m5.objects.AlphaTLB import AlphaMMU as ArchMMU
     from m5.objects.AlphaInterrupts import AlphaInterrupts as ArchInterrupts
     from m5.objects.AlphaISA import AlphaISA as ArchISA
     ArchISAsParam = VectorParam.AlphaISA
 elif buildEnv['TARGET_ISA'] == 'sparc':
-    from m5.objects.SparcTLB import SparcTLB as ArchDTB, SparcTLB as ArchITB
+    from m5.objects.SparcTLB import SparcMMU as ArchMMU
     from m5.objects.SparcInterrupts import SparcInterrupts as ArchInterrupts
     from m5.objects.SparcISA import SparcISA as ArchISA
     ArchISAsParam = VectorParam.SparcISA
 elif buildEnv['TARGET_ISA'] == 'x86':
-    from m5.objects.X86TLB import X86TLB as ArchDTB, X86TLB as ArchITB
+    from m5.objects.X86TLB import X86MMU as ArchMMU
     from m5.objects.X86LocalApic import X86LocalApic as ArchInterrupts
     from m5.objects.X86ISA import X86ISA as ArchISA
     ArchISAsParam = VectorParam.X86ISA
 elif buildEnv['TARGET_ISA'] == 'mips':
-    from m5.objects.MipsTLB import MipsTLB as ArchDTB, MipsTLB as ArchITB
+    from m5.objects.MipsTLB import MipsMMU as ArchMMU
     from m5.objects.MipsInterrupts import MipsInterrupts as ArchInterrupts
     from m5.objects.MipsISA import MipsISA as ArchISA
     ArchISAsParam = VectorParam.MipsISA
 elif buildEnv['TARGET_ISA'] == 'arm':
-    from m5.objects.ArmTLB import ArmDTB as ArchDTB, ArmITB as ArchITB
+    from m5.objects.ArmTLB import ArmMMU as ArchMMU
     from m5.objects.ArmInterrupts import ArmInterrupts as ArchInterrupts
     from m5.objects.ArmISA import ArmISA as ArchISA
     ArchISAsParam = VectorParam.ArmISA
 elif buildEnv['TARGET_ISA'] == 'power':
-    from m5.objects.PowerTLB import PowerTLB as ArchDTB, PowerTLB as ArchITB
+    from m5.objects.PowerTLB import PowerMMU as ArchMMU
     from m5.objects.PowerInterrupts import PowerInterrupts as ArchInterrupts
     from m5.objects.PowerISA import PowerISA as ArchISA
     ArchISAsParam = VectorParam.PowerISA
 elif buildEnv['TARGET_ISA'] == 'riscv':
-    from m5.objects.RiscvTLB import RiscvTLB as ArchDTB, RiscvTLB as ArchITB
+    from m5.objects.RiscvTLB import RiscvMMU as ArchMMU
     from m5.objects.RiscvInterrupts import RiscvInterrupts as ArchInterrupts
     from m5.objects.RiscvISA import RiscvISA as ArchISA
     ArchISAsParam = VectorParam.RiscvISA
@@ -171,8 +171,7 @@ class BaseCPU(ClockedObject):
 
     workload = VectorParam.Process([], "processes to run")
 
-    dtb = Param.BaseTLB(ArchDTB(), "Data TLB")
-    itb = Param.BaseTLB(ArchITB(), "Instruction TLB")
+    mmu = Param.BaseMMU(ArchMMU(), "CPU memory management unit")
     if buildEnv['TARGET_ISA'] == 'power':
         UnifiedTLB = Param.Bool(True, "Is this a Unified TLB?")
     interrupts = VectorParam.BaseInterrupts([], "Interrupt Controller")
@@ -198,7 +197,7 @@ class BaseCPU(ClockedObject):
     _cached_ports = ['icache_port', 'dcache_port']
 
     if buildEnv['TARGET_ISA'] in ['x86', 'arm']:
-        _cached_ports += ["itb.walker.port", "dtb.walker.port"]
+        _cached_ports += ["mmu.itb.walker.port", "mmu.dtb.walker.port"]
 
     _uncached_slave_ports = []
     _uncached_master_ports = []
@@ -236,12 +235,13 @@ class BaseCPU(ClockedObject):
             if iwc and dwc:
                 self.itb_walker_cache = iwc
                 self.dtb_walker_cache = dwc
-                self.itb.walker.port = iwc.cpu_side
-                self.dtb.walker.port = dwc.cpu_side
+                self.mmu.itb.walker.port = iwc.cpu_side
+                self.mmu.dtb.walker.port = dwc.cpu_side
                 self._cached_ports += ["itb_walker_cache.mem_side", \
                                        "dtb_walker_cache.mem_side"]
             else:
-                self._cached_ports += ["itb.walker.port", "dtb.walker.port"]
+                self._cached_ports += ["mmu.itb.walker.port",
+                                       "mmu.dtb.walker.port"]
 
             # Checker doesn't need its own tlb caches because it does
             # functional accesses only

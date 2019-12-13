@@ -84,8 +84,8 @@ CheckerCPU::CheckerCPU(Params *p)
 
     exitOnError = p->exitOnError;
     warnOnlyOnLoadError = p->warnOnlyOnLoadError;
-    itb = p->itb;
-    dtb = p->dtb;
+    itb = p->mmu->itb;
+    dtb = p->mmu->dtb;
     workload = p->workload;
 
     updateOnError = true;
