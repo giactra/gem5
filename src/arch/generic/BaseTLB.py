@@ -45,3 +45,7 @@ class BaseMMU(SimObject):
     cxx_header = "arch/generic/tlb.hh"
     itb = Param.BaseTLB("Instruction TLB")
     dtb = Param.BaseTLB("Data TLB")
+
+    @classmethod
+    def walkerPorts(cls):
+        return []

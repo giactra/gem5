@@ -64,3 +64,7 @@ class X86MMU(BaseMMU):
     cxx_header = 'arch/x86/tlb.hh'
     itb = X86TLB()
     dtb = X86TLB()
+
+    @classmethod
+    def walkerPorts(cls):
+        return ["mmu.itb.walker.port", "mmu.dtb.walker.port"]

@@ -195,9 +195,7 @@ class BaseCPU(ClockedObject):
     icache_port = MasterPort("Instruction Port")
     dcache_port = MasterPort("Data Port")
     _cached_ports = ['icache_port', 'dcache_port']
-
-    if buildEnv['TARGET_ISA'] in ['x86', 'arm']:
-        _cached_ports += ["mmu.itb.walker.port", "mmu.dtb.walker.port"]
+    _cached_ports += ArchMMU.walkerPorts()
 
     _uncached_slave_ports = []
     _uncached_master_ports = []
@@ -240,8 +238,7 @@ class BaseCPU(ClockedObject):
                 self._cached_ports += ["itb_walker_cache.mem_side", \
                                        "dtb_walker_cache.mem_side"]
             else:
-                self._cached_ports += ["mmu.itb.walker.port",
-                                       "mmu.dtb.walker.port"]
+                self._cached_ports += ArchMMU.walkerPorts()
 
             # Checker doesn't need its own tlb caches because it does
             # functional accesses only

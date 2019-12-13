@@ -111,3 +111,7 @@ class ArmMMU(BaseMMU):
     cxx_header = 'arch/arm/tlb.hh'
     itb = ArmITB()
     dtb = ArmDTB()
+
+    @classmethod
+    def walkerPorts(cls):
+        return ["mmu.itb.walker.port", "mmu.dtb.walker.port"]
