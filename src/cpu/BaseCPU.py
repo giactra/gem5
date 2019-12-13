@@ -223,6 +223,8 @@ class BaseCPU(ClockedObject):
             uncached_bus = cached_bus
         self.connectUncachedPorts(uncached_bus)
 
+        self.mmu.connectTLBPorts()
+
     def addPrivateSplitL1Caches(self, ic, dc, iwc = None, dwc = None):
         self.icache = ic
         self.dcache = dc
