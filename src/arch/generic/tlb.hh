@@ -46,14 +46,14 @@
 #include "base/logging.hh"
 #include "mem/request.hh"
 #include "params/BaseMMU.hh"
-#include "sim/sim_object.hh"
+#include "sim/clocked_object.hh"
 
 class ThreadContext;
 
-class BaseTLB : public SimObject
+class BaseTLB : public ClockedObject
 {
   protected:
-    BaseTLB(const Params *p) : SimObject(p) {}
+    BaseTLB(const Params *p) : ClockedObject(p) {}
 
   public:
 

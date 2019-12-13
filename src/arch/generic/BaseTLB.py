@@ -29,9 +29,10 @@
 #          Ivan Pizarro
 
 from m5.params import *
+from m5.objects.ClockedObject import ClockedObject
 from m5.SimObject import SimObject
 
-class BaseTLB(SimObject):
+class BaseTLB(ClockedObject):
     type = 'BaseTLB'
     abstract = True
     cxx_header = "arch/generic/tlb.hh"
