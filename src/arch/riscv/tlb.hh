@@ -44,6 +44,7 @@
 #include "arch/riscv/vtophys.hh"
 #include "base/statistics.hh"
 #include "mem/request.hh"
+#include "params/RiscvMMU.hh"
 #include "params/RiscvTLB.hh"
 #include "sim/sim_object.hh"
 
@@ -124,6 +125,13 @@ class TLB : public BaseTLB
     Fault translateInst(const RequestPtr &req, ThreadContext *tc);
     Fault translateData(const RequestPtr &req, ThreadContext *tc, bool write);
 };
+
+class MMU : public BaseMMU
+{
+  public:
+    MMU(const RiscvMMUParams *p);
+};
+
 
 }
 

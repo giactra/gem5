@@ -51,6 +51,7 @@
 #include "arch/generic/tlb.hh"
 #include "base/statistics.hh"
 #include "mem/request.hh"
+#include "params/ArmMMU.hh"
 #include "params/ArmTLB.hh"
 #include "sim/probe/pmu.hh"
 
@@ -461,6 +462,12 @@ private:
     Fault testWalk(Addr pa, Addr size, Addr va, bool is_secure, Mode mode,
                    TlbEntry::DomainType domain,
                    LookupLevel lookup_level);
+};
+
+class MMU : public BaseMMU
+{
+  public:
+    MMU(const ArmMMUParams *p);
 };
 
 template<typename T>

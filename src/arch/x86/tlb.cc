@@ -519,10 +519,20 @@ TLB::getTableWalkerPort()
     return &walker->getPort("port");
 }
 
+MMU::MMU(const X86MMUParams *p)
+  : BaseMMU(p)
+{}
+
 } // namespace X86ISA
 
 X86ISA::TLB *
 X86TLBParams::create()
 {
     return new X86ISA::TLB(this);
+}
+
+X86ISA::MMU *
+X86MMUParams::create()
+{
+    return new X86ISA::MMU(this);
 }

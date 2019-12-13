@@ -29,7 +29,7 @@
 from m5.SimObject import SimObject
 from m5.params import *
 
-from m5.objects.BaseTLB import BaseTLB
+from m5.objects.BaseTLB import BaseTLB, BaseMMU
 
 class AlphaTLB(BaseTLB):
     type = 'AlphaTLB'
@@ -42,3 +42,10 @@ class AlphaDTB(AlphaTLB):
 
 class AlphaITB(AlphaTLB):
     size = 48
+
+class AlphaMMU(BaseMMU):
+    type = 'AlphaMMU'
+    cxx_class = 'AlphaISA::MMU'
+    cxx_header = 'arch/alpha/tlb.hh'
+    itb = AlphaITB()
+    dtb = AlphaDTB()

@@ -47,6 +47,7 @@
 #include "arch/x86/pagetable.hh"
 #include "base/trie.hh"
 #include "mem/request.hh"
+#include "params/X86MMU.hh"
 #include "params/X86TLB.hh"
 
 class ThreadContext;
@@ -166,6 +167,12 @@ namespace X86ISA
          * @return A pointer to the walker port
          */
         Port *getTableWalkerPort() override;
+    };
+
+    class MMU : public BaseMMU
+    {
+      public:
+        MMU(const X86MMUParams *p);
     };
 }
 

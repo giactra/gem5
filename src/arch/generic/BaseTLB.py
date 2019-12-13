@@ -38,3 +38,10 @@ class BaseTLB(SimObject):
     # Ports to connect with other TLB levels
     slave  = VectorSlavePort("Port closer to the CPU side")
     master = MasterPort("Port closer to memory side")
+
+class BaseMMU(SimObject):
+    type = 'BaseMMU'
+    abstract = True
+    cxx_header = "arch/generic/tlb.hh"
+    itb = Param.BaseTLB("Instruction TLB")
+    dtb = Param.BaseTLB("Data TLB")

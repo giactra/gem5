@@ -31,10 +31,17 @@
 from m5.SimObject import SimObject
 from m5.params import *
 
-from m5.objects.BaseTLB import BaseTLB
+from m5.objects.BaseTLB import BaseTLB, BaseMMU
 
 class PowerTLB(BaseTLB):
     type = 'PowerTLB'
     cxx_class = 'PowerISA::TLB'
     cxx_header = 'arch/power/tlb.hh'
     size = Param.Int(64, "TLB size")
+
+class PowerMMU(BaseMMU):
+    type = 'PowerMMU'
+    cxx_class = 'PowerISA::MMU'
+    cxx_header = 'arch/power/tlb.hh'
+    itb = PowerTLB()
+    dtb = PowerTLB()

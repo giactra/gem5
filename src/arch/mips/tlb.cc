@@ -347,8 +347,18 @@ TLB::index(bool advance)
     return *pte;
 }
 
+MMU::MMU(const MipsMMUParams *p)
+  : BaseMMU(p)
+{}
+
 MipsISA::TLB *
 MipsTLBParams::create()
 {
-    return new TLB(this);
+    return new MipsISA::TLB(this);
+}
+
+MipsISA::MMU *
+MipsMMUParams::create()
+{
+    return new MipsISA::MMU(this);
 }

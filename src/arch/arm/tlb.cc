@@ -66,6 +66,7 @@
 #include "debug/TLBVerbose.hh"
 #include "mem/page_table.hh"
 #include "mem/request.hh"
+#include "params/ArmMMU.hh"
 #include "params/ArmTLB.hh"
 #include "sim/full_system.hh"
 #include "sim/process.hh"
@@ -1623,9 +1624,18 @@ TLB::testWalk(Addr pa, Addr size, Addr va, bool is_secure, Mode mode,
     }
 }
 
+MMU::MMU(const ArmMMUParams *p)
+  : BaseMMU(p)
+{}
 
 ArmISA::TLB *
 ArmTLBParams::create()
 {
     return new ArmISA::TLB(this);
+}
+
+ArmISA::MMU *
+ArmMMUParams::create()
+{
+    return new ArmISA::MMU(this);
 }

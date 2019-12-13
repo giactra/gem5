@@ -42,6 +42,7 @@
 #include "arch/generic/tlb.hh"
 #include "base/statistics.hh"
 #include "mem/request.hh"
+#include "params/AlphaMMU.hh"
 #include "params/AlphaTLB.hh"
 
 class ThreadContext;
@@ -149,6 +150,12 @@ class TLB : public BaseTLB
     Fault finalizePhysical(
             const RequestPtr &req, ThreadContext *tc,
             Mode mode) const override;
+};
+
+class MMU : public BaseMMU
+{
+  public:
+    MMU(const AlphaMMUParams *p);
 };
 
 } // namespace AlphaISA

@@ -29,10 +29,17 @@
 from m5.SimObject import SimObject
 from m5.params import *
 
-from m5.objects.BaseTLB import BaseTLB
+from m5.objects.BaseTLB import BaseTLB, BaseMMU
 
 class SparcTLB(BaseTLB):
     type = 'SparcTLB'
     cxx_class = 'SparcISA::TLB'
     cxx_header = 'arch/sparc/tlb.hh'
     size = Param.Int(64, "TLB size")
+
+class SparcMMU(BaseMMU):
+    type = 'SparcMMU'
+    cxx_class = 'SparcISA::MMU'
+    cxx_header = 'arch/sparc/tlb.hh'
+    itb = SparcTLB()
+    dtb = SparcTLB()

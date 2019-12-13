@@ -32,10 +32,17 @@
 from m5.SimObject import SimObject
 from m5.params import *
 
-from m5.objects.BaseTLB import BaseTLB
+from m5.objects.BaseTLB import BaseTLB, BaseMMU
 
 class RiscvTLB(BaseTLB):
     type = 'RiscvTLB'
     cxx_class = 'RiscvISA::TLB'
     cxx_header = 'arch/riscv/tlb.hh'
     size = Param.Int(64, "TLB size")
+
+class RiscvMMU(BaseMMU):
+    type = 'RiscvMMU'
+    cxx_class = 'RiscvISA::MMU'
+    cxx_header = 'arch/riscv/tlb.hh'
+    itb = RiscvTLB()
+    dtb = RiscvTLB()

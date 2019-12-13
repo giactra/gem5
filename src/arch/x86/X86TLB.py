@@ -38,7 +38,7 @@
 from m5.params import *
 from m5.proxy import *
 
-from m5.objects.BaseTLB import BaseTLB
+from m5.objects.BaseTLB import BaseTLB, BaseMMU
 from m5.objects.ClockedObject import ClockedObject
 
 class X86PagetableWalker(ClockedObject):
@@ -57,3 +57,10 @@ class X86TLB(BaseTLB):
     size = Param.Unsigned(64, "TLB size")
     walker = Param.X86PagetableWalker(\
             X86PagetableWalker(), "page table walker")
+
+class X86MMU(BaseMMU):
+    type = 'X86MMU'
+    cxx_class = 'X86ISA::MMU'
+    cxx_header = 'arch/x86/tlb.hh'
+    itb = X86TLB()
+    dtb = X86TLB()

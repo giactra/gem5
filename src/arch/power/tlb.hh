@@ -46,6 +46,7 @@
 #include "arch/power/vtophys.hh"
 #include "base/statistics.hh"
 #include "mem/request.hh"
+#include "params/PowerMMU.hh"
 #include "params/PowerTLB.hh"
 
 class ThreadContext;
@@ -176,6 +177,12 @@ class TLB : public BaseTLB
     void unserialize(CheckpointIn &cp) override;
 
     void regStats() override;
+};
+
+class MMU : public BaseMMU
+{
+  public:
+    MMU(const PowerMMUParams *p);
 };
 
 } // namespace PowerISA

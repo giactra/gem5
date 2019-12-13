@@ -400,8 +400,18 @@ TLB::index(bool advance)
     return *pte;
 }
 
+MMU::MMU(const RiscvMMUParams *p)
+  : BaseMMU(p)
+{}
+
 RiscvISA::TLB *
 RiscvTLBParams::create()
 {
     return new TLB(this);
+}
+
+RiscvISA::MMU *
+RiscvMMUParams::create()
+{
+    return new RiscvISA::MMU(this);
 }

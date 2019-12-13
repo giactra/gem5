@@ -40,7 +40,7 @@
 from m5.SimObject import SimObject
 from m5.params import *
 from m5.proxy import *
-from m5.objects.BaseTLB import BaseTLB
+from m5.objects.BaseTLB import BaseTLB, BaseMMU
 from m5.objects.ClockedObject import ClockedObject
 
 # Basic stage 1 translation objects
@@ -104,3 +104,10 @@ class ArmITB(ArmTLB):
 
 class ArmDTB(ArmTLB):
     stage2_mmu = ArmStage2DMMU()
+
+class ArmMMU(BaseMMU):
+    type = 'ArmMMU'
+    cxx_class = 'ArmISA::MMU'
+    cxx_header = 'arch/arm/tlb.hh'
+    itb = ArmITB()
+    dtb = ArmDTB()

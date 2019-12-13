@@ -1417,10 +1417,20 @@ TLB::unserialize(CheckpointIn &cp)
     UNSERIALIZE_SCALAR(sfar);
 }
 
+MMU::MMU(const SparcMMUParams *p)
+  : BaseMMU(p)
+{}
+
 } // namespace SparcISA
 
 SparcISA::TLB *
 SparcTLBParams::create()
 {
     return new SparcISA::TLB(this);
+}
+
+SparcISA::MMU *
+SparcMMUParams::create()
+{
+    return new SparcISA::MMU(this);
 }

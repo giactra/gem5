@@ -45,6 +45,7 @@
 
 #include "base/logging.hh"
 #include "mem/request.hh"
+#include "params/BaseMMU.hh"
 #include "sim/sim_object.hh"
 
 class ThreadContext;
@@ -139,6 +140,20 @@ class BaseTLB : public SimObject
     virtual Port* getTableWalkerPort() { return NULL; }
 
     void memInvalidate() { flushAll(); }
+};
+
+class BaseMMU : public SimObject
+{
+  protected:
+    typedef BaseMMUParams Params;
+
+    BaseMMU(const Params *p)
+      : SimObject(p), dtb(p->dtb), itb(p->itb)
+    {}
+
+  public:
+    BaseTLB* dtb;
+    BaseTLB* itb;
 };
 
 #endif // __ARCH_GENERIC_TLB_HH__

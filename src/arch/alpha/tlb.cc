@@ -622,10 +622,20 @@ TLB::finalizePhysical(const RequestPtr &req, ThreadContext *tc,
     return NoFault;
 }
 
+MMU::MMU(const AlphaMMUParams *p)
+  : BaseMMU(p)
+{}
+
 } // namespace AlphaISA
 
 AlphaISA::TLB *
 AlphaTLBParams::create()
 {
     return new AlphaISA::TLB(this);
+}
+
+AlphaISA::MMU *
+AlphaMMUParams::create()
+{
+    return new AlphaISA::MMU(this);
 }

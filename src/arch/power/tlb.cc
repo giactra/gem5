@@ -347,8 +347,18 @@ TLB::index(bool advance)
     return *pte;
 }
 
+MMU::MMU(const PowerMMUParams *p)
+  : BaseMMU(p)
+{}
+
 PowerISA::TLB *
 PowerTLBParams::create()
 {
     return new PowerISA::TLB(this);
+}
+
+PowerISA::MMU *
+PowerMMUParams::create()
+{
+    return new PowerISA::MMU(this);
 }

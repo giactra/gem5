@@ -36,6 +36,7 @@
 #include "arch/sparc/tlb_map.hh"
 #include "base/logging.hh"
 #include "mem/request.hh"
+#include "params/SparcMMU.hh"
 #include "params/SparcTLB.hh"
 
 class ThreadContext;
@@ -197,6 +198,12 @@ class TLB : public BaseTLB
 
     TlbEntry *cacheEntry[2];
     ASI cacheAsi[2];
+};
+
+class MMU : public BaseMMU
+{
+  public:
+    MMU(const SparcMMUParams *p);
 };
 
 }

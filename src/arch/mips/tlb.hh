@@ -44,6 +44,7 @@
 #include "arch/mips/vtophys.hh"
 #include "base/statistics.hh"
 #include "mem/request.hh"
+#include "params/MipsMMU.hh"
 #include "params/MipsTLB.hh"
 #include "sim/sim_object.hh"
 
@@ -124,6 +125,12 @@ class TLB : public BaseTLB
   private:
     Fault translateInst(const RequestPtr &req, ThreadContext *tc);
     Fault translateData(const RequestPtr &req, ThreadContext *tc, bool write);
+};
+
+class MMU : public BaseMMU
+{
+  public:
+    MMU(const MipsMMUParams *p);
 };
 
 }
