@@ -1370,7 +1370,7 @@ TLB::translateComplete(const RequestPtr &req, ThreadContext *tc,
 Port *
 TLB::getTableWalkerPort()
 {
-    return &stage2Mmu->getDMAPort();
+    return &stage2Mmu->getTableWalkerPort();
 }
 
 vmid_t
