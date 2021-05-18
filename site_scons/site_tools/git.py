@@ -105,10 +105,10 @@ def install_style_hooks(env):
         print("Input exception, exiting scons.\n")
         sys.exit(1)
 
-    git_style_script = env.Dir("#util").File("git-pre-commit.py")
+    git_pre_commit_script = env.Dir("#util").File("git-pre-commit.py")
     git_msg_script = env.Dir("#ext").File("git-commit-msg")
 
-    hook_install("pre-commit", git_style_script)
+    hook_install("pre-commit", git_pre_commit_script)
     hook_install("commit-msg", git_msg_script)
 
 def generate(env):
