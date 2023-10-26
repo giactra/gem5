@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021-2022 Arm Limited
+ * Copyright (c) 2019, 2021-2023 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -65,6 +65,7 @@ Gicv3CPUInterface::Gicv3CPUInterface(Gicv3 * gic, ThreadContext *_tc)
       cpuId(tc->contextId())
 {
     hppi.prio = 0xff;
+    hppi.group = Gicv3::G0S;
     hppi.intid = Gicv3::INTID_SPURIOUS;
 
     setISA(static_cast<ISA*>(tc->getIsaPtr()));
