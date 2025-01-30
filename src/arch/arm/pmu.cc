@@ -69,13 +69,18 @@ PMU::PMU(const ArmPMUParams &p)
       reg_pmcr_conf(0),
       interrupt(nullptr),
       exitOnPMUControl(p.exitOnPMUControl),
-      exitOnPMUInterrupt(p.exitOnPMUInterrupt)
+      exitOnPMUInterrupt(p.exitOnPMUInterrupt),
+      stats(this)
 {
     DPRINTF(PMUVerbose, "Initializing the PMU.\n");
 
     if (maximumCounterCount > 31) {
         fatal("The PMU can only accept 31 counters, %d counters requested.\n",
               maximumCounterCount);
+    }
+
+    for (const auto& [key, value] : p.statCounters) {
+        statCounters.insert(key);
     }
 
     warn_if(!p.interrupt, "ARM PMU: No interrupt specified, interrupt " \
@@ -125,6 +130,9 @@ PMU::addSoftwareIncrementEvent(EventTypeId id)
     swIncrementEvent = std::make_shared<SWIncrementEvent>();
     eventMap[id] = swIncrementEvent;
     registerEvent(id);
+
+    if (auto it = statCounters.find(id); it != statCounters.end())
+        swIncrementEvent->genStatCounter(this, id);
 }
 
 void
@@ -147,6 +155,9 @@ PMU::addEventProbe(EventTypeId id, SimObject *obj, const char *probe_name)
 
     registerEvent(id);
 
+    // Add a stat counter to the event
+    if (auto it = statCounters.find(id); it != statCounters.end())
+        event->genStatCounter(this, id);
 }
 
 void
@@ -186,6 +197,20 @@ PMU::regProbeListeners()
     panic_if(!event, "core cycle event is not present\n");
     cycleCounter.enabled = true;
     cycleCounter.attach(event);
+}
+
+uint64_t
+PMU::getStatVal(EventTypeId event_id)
+{
+    if (statCounters.find(event_id) != statCounters.end()) {
+        if (auto event = getEvent(event_id); event) {
+            return event->getStatValue();
+        }
+    }
+    // Return zero if no event is found (no probe attached
+    // to the PMU for the specific event) or if stat counters
+    // are not enabled
+    return 0;
 }
 
 void
@@ -479,6 +504,19 @@ PMU::PMUEvent::increment(const uint64_t val)
 }
 
 void
+PMU::PMUEvent::setStatValue(const uint64_t val)
+{
+    statCounter->setValue(val);
+}
+
+uint64_t
+PMU::PMUEvent::getStatValue()
+{
+    return statCounter->getValue();
+}
+
+
+void
 PMU::PMUEvent::detachEvent(PMU::CounterState *user)
 {
     userCounters.erase(user);
@@ -486,6 +524,16 @@ PMU::PMUEvent::detachEvent(PMU::CounterState *user)
     if (userCounters.empty()) {
         disable();
     }
+}
+
+void
+PMU::PMUEvent::genStatCounter(PMU *pmu, EventTypeId id)
+{
+    statCounter = new CounterState(*pmu, 0, pmu->use64bitCounters);
+    statCounter->enabled = true;
+    statCounter->eventId = id;
+
+    pmu->updateCounter(*statCounter);
 }
 
 void
@@ -845,6 +893,32 @@ PMU::SWIncrementEvent::write(uint64_t val)
             counter->add(1);
         }
     }
+}
+
+#define PMU_STAT_FUNC(id) \
+    [pmu=pmu, id=id] () { return pmu->getStatVal(id); }
+
+PMU::Stats::Stats(PMU *parent)
+    : statistics::Group(parent), pmu(parent)
+{
+    auto params = static_cast<const ArmPMUParams&>(pmu->params());
+    for (const auto& [key, val] : params.statCounters) {
+        add(key, val.c_str());
+    }
+}
+
+void
+PMU::Stats::add(EventTypeId id, const char *stat_name)
+{
+    map.emplace(std::piecewise_construct,
+                std::forward_as_tuple(id),
+                std::forward_as_tuple(
+                    this, stat_name,
+                    statistics::units::Count::get(),
+                    stat_name));
+    map[id]
+        .functor(PMU_STAT_FUNC(id))
+        .precision(0);
 }
 
 } // namespace ArmISA

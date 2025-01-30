@@ -291,9 +291,15 @@ class PMU : public SimObject, public ArmISA::BaseISADevice
     struct PMUEvent
     {
 
-        PMUEvent() {}
+        PMUEvent()
+          : statCounter(nullptr)
+        {}
 
-        virtual ~PMUEvent() {}
+        virtual ~PMUEvent()
+        {
+            if (statCounter)
+                delete statCounter;
+        }
 
         /**
          * attach this event to a given counter
@@ -319,6 +325,33 @@ class PMU : public SimObject, public ArmISA::BaseISADevice
         virtual void increment(const uint64_t val);
 
         /**
+         * Set the value of the stat counter tracking the event.
+         * This capability is used to keep the stat counter in sync with
+         * the architectural counter.
+         *
+         * @param val counter value
+         */
+        void setStatValue(const uint64_t val);
+
+        /**
+         * Get the value of the stat counter tracking the event.
+         * This is usually called when dumping PMU's statistics
+         *
+         * @return counter value
+         */
+        uint64_t getStatValue();
+
+        /**
+         * Generate a stat counter to track the current event
+         * (passed as second argument). Called once at the end of
+         * addEventProbe after matching the probe with the event
+         *
+         * @param pmu pointer to the pmu object
+         * @param id event identifier
+         */
+        void genStatCounter(PMU *pmu, EventTypeId id);
+
+        /**
          * Enable the current event
          */
         virtual void enable() = 0;
@@ -338,6 +371,14 @@ class PMU : public SimObject, public ArmISA::BaseISADevice
 
         /** set of counters using this event  **/
         std::set<PMU::CounterState*> userCounters;
+
+        /**
+         * Non architectural counter used to count events
+         * for stats purposes (it counts events even if SW
+         * does not program any PMU counter through its
+         * interface)
+         **/
+        PMU::CounterState *statCounter;
     };
 
     struct RegularEvent : public PMUEvent
@@ -588,6 +629,12 @@ class PMU : public SimObject, public ArmISA::BaseISADevice
     /** Determine whether to use 64-bit or 32-bit counters. */
     bool use64bitCounters;
 
+    /**
+     * Determine whether we merge event counting with
+     * the stats framework.
+     */
+    std::set<EventTypeId> statCounters;
+
     /** Performance Monitor Count Enable Register */
     RegVal reg_pmcnten;
 
@@ -654,6 +701,28 @@ class PMU : public SimObject, public ArmISA::BaseISADevice
      * Exit simloop on PMU interrupt
      */
     bool exitOnPMUInterrupt;
+
+    /**
+     * Retrieve the counter value for a particular event (id).
+     * This method is used by the Stats class in order to extract
+     * the stat counter value from an event.
+     *
+     * @param event_id event identifier
+     * @return The counter value
+     */
+    uint64_t getStatVal(EventTypeId event_id);
+
+    struct Stats : public statistics::Group
+    {
+      public:
+        Stats(PMU *parent);
+
+        void add(EventTypeId id, const char *stat_name);
+
+      private:
+        PMU *pmu;
+        std::unordered_map<EventTypeId, statistics::Value> map;
+    } stats;
 };
 
 } // namespace ArmISA

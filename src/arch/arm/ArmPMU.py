@@ -276,3 +276,25 @@ class ArmPMU(SimObject):
         False,
         "Choose whether to use 64-bit or 32-bit PMEVCNTR<n>_EL0 registers.",
     )
+
+    statCounters = DictParam.Int.String(
+        {},
+        """
+        Dictionary of PMU events to be merged into the stats framework.
+            Key = ID of the PMU event
+            Value = Name of the gem5 stat
+
+        For example the following param value:
+
+        my_stat_counters = {
+            int(EventTypeId("INST_RETIRED")): "INST_RETIRED",
+            int(EventTypeId("CPU_CYCLES")): "CPU_CYCLES",
+            0xC0C0 : "MY_IMPDEF_EVENT"
+        }
+
+        Will produce three stats under the pmu section:
+            root.<>.pmu.INST_RETIRED=<val>
+            root.<>.pmu.CPU_CYCLES=<val>
+            root.<>.pmu.MY_IMPDEF_EVENT=<val>
+        """,
+    )
