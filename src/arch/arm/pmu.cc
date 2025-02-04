@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, 2017-2019, 2022-2023 Arm Limited
+ * Copyright (c) 2011-2014, 2017-2019, 2022-2023, 2025 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -88,7 +88,7 @@ PMU::PMU(const ArmPMUParams &p)
 
     // Setup the hard-coded cycle counter, which is equivalent to
     // architected counter event type 0x11.
-    cycleCounter.eventId = 0x11;
+    cycleCounter.eventId = enums::EventTypeId::CPU_CYCLES;
 }
 
 PMU::~PMU()
@@ -106,7 +106,7 @@ PMU::setThreadContext(ThreadContext *tc)
 }
 
 void
-PMU::addSoftwareIncrementEvent(unsigned int id)
+PMU::addSoftwareIncrementEvent(EventTypeId id)
 {
     auto old_event = eventMap.find(id);
     DPRINTF(PMUVerbose, "PMU: Adding SW increment event with id '0x%x'\n", id);
@@ -128,11 +128,11 @@ PMU::addSoftwareIncrementEvent(unsigned int id)
 }
 
 void
-PMU::addEventProbe(unsigned int id, SimObject *obj, const char *probe_name)
+PMU::addEventProbe(EventTypeId id, SimObject *obj, const char *probe_name)
 {
 
     DPRINTF(PMUVerbose, "PMU: Adding Probe Driven event with id '0x%x'"
-        "as probe %s:%s\n",id, obj->name(), probe_name);
+        "as probe %s:%s\n", id, obj->name(), probe_name);
 
     std::shared_ptr<RegularEvent> event;
     auto event_entry = eventMap.find(id);
@@ -150,7 +150,7 @@ PMU::addEventProbe(unsigned int id, SimObject *obj, const char *probe_name)
 }
 
 void
-PMU::registerEvent(uint32_t id)
+PMU::registerEvent(EventTypeId id)
 {
     // Flag the event as available in the corresponding PMCEID register if it
     // is an architected event.
@@ -773,7 +773,7 @@ PMU::unserialize(CheckpointIn &cp)
 }
 
 std::shared_ptr<PMU::PMUEvent>
-PMU::getEvent(uint64_t eventId)
+PMU::getEvent(EventTypeId eventId)
 {
     auto entry = eventMap.find(eventId);
 

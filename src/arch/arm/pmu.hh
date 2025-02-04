@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, 2017-2018, 2022-2023 Arm Limited
+ * Copyright (c) 2011-2014, 2017-2018, 2022-2023, 2025 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -47,10 +47,12 @@
 #include "base/cprintf.hh"
 #include "cpu/base.hh"
 #include "debug/PMUVerbose.hh"
+#include "enums/EventTypeId.hh"
 #include "mem/cache/cache_probe_arg.hh"
 #include "sim/eventq.hh"
 #include "sim/sim_object.hh"
 #include "sim/system.hh"
+
 
 namespace gem5
 {
@@ -61,7 +63,6 @@ class ThreadContext;
 class ArmInterruptPin;
 
 namespace ArmISA {
-
 
 /**
  * Model of an ARM PMU version 3
@@ -97,13 +98,14 @@ namespace ArmISA {
 class PMU : public SimObject, public ArmISA::BaseISADevice
 {
   public:
+    using EventTypeId = std::underlying_type_t<enums::EventTypeId>;
     PMU(const ArmPMUParams &p);
     ~PMU();
 
-    void addEventProbe(unsigned int id, SimObject *obj, const char *name);
-    void addSoftwareIncrementEvent(unsigned int id);
+    void addEventProbe(EventTypeId id, SimObject *obj, const char *name);
+    void addSoftwareIncrementEvent(EventTypeId id);
 
-    void registerEvent(uint32_t id);
+    void registerEvent(EventTypeId id);
 
   public: // SimObject and related interfaces
     void serialize(CheckpointOut &cp) const override;
@@ -188,13 +190,6 @@ class PMU : public SimObject, public ArmISA::BaseISADevice
 
     /** Cycle Count Register Number */
     static const CounterId PMCCNTR = 31;
-
-    /**
-     * Event type ID.
-     *
-     * See the PMU documentation for a list of architected IDs.
-     */
-    typedef unsigned int EventTypeId;
 
   protected: /* High-level register and interrupt handling */
     RegVal readMiscRegInt(int misc_reg);
@@ -425,7 +420,7 @@ class PMU : public SimObject, public ArmISA::BaseISADevice
      * @param the id of the event to obtain
      * @return a pointer to the event with id eventId
      */
-    std::shared_ptr<PMUEvent> getEvent(uint64_t eventId);
+    std::shared_ptr<PMUEvent> getEvent(EventTypeId eventId);
 
     /** State of a counter within the PMU. **/
     struct CounterState : public Serializable
@@ -630,7 +625,7 @@ class PMU : public SimObject, public ArmISA::BaseISADevice
     CounterState cycleCounter;
 
     /** The id of the counter hardwired to the cpu cycle counter **/
-    const uint64_t cycleCounterEventId;
+    const EventTypeId cycleCounterEventId;
 
     /** The event that implements the software increment **/
     std::shared_ptr<SWIncrementEvent> swIncrementEvent;
