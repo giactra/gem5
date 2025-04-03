@@ -1,6 +1,6 @@
 # -*- mode:python -*-
 
-# Copyright (c) 2013, 2015-2020, 2023 ARM Limited
+# Copyright (c) 2013, 2015-2020, 2023, 2025 Arm Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -85,7 +85,13 @@ import SCons
 import SCons.Node
 import SCons.Node.FS
 import SCons.Tool
-import SCons.Errors
+from SCons.Errors import UserError as SConsUserError
+try:
+    # SCons.Errors.SConsEnvironmentError for version > 4.0.0
+    from SCons.Errors import SConsEnvironmentError
+except ImportError:
+    # SCons.Errors.EnvironmentError for version < 4.0.0
+    from SCons.Errors import EnvironmentError as SConsEnvironmentError
 
 if getattr(SCons, '__version__', None) in ('3.0.0', '3.0.1'):
     # Monkey patch a fix which appears in version 3.0.2, since we only
@@ -560,7 +566,7 @@ for variant_path in variant_paths:
 
             cdb_path = f"{variant_path}/compile_commands.json"
             env.CompilationDatabase(cdb_path)
-    except (SCons.Errors.SConsEnvironmentError, SCons.Errors.UserError):
+    except (SConsEnvironmentError, SConsUserError):
         # Looks like different scons versions raise different exeptions
         pass
 
