@@ -238,9 +238,24 @@ for param in sim_object._params.values():
         if not is_simobj and not is_vector:
             code('} else if (name == "${{param.name}}") {')
             code.indent()
-            param.ptype.cxx_ini_parse(
-                code, "value", "this->%s" % param.name, "ret ="
-            )
+            if isinstance(param, m5.params.OptionalParamDesc):
+                nullopt_str = str(m5.params.NullOpt)
+                code('if (value == "${{nullopt_str}}") {')
+                code.indent()
+                code("this->${{param.name}} = std::nullopt;")
+                code("ret = true;")
+                code.dedent()
+                code("} else {")
+                code.indent()
+                param.ptype.cxx_ini_parse(
+                    code, "value", "this->%s.value()" % param.name, "ret ="
+                )
+                code.dedent()
+                code("}")
+            else:
+                param.ptype.cxx_ini_parse(
+                    code, "value", "this->%s" % param.name, "ret ="
+                )
             code.dedent()
 code.dedent()
 
