@@ -319,8 +319,13 @@ for param in sim_object._params.values():
         code.indent()
         code("${{param.key_desc.ptype.cxx_type}} key;")
         code("${{param.val_desc.ptype.cxx_type}} val;")
-        param.key_desc.ptype.cxx_ini_parse(code, "i->first", "key", "ret =")
-        param.val_desc.ptype.cxx_ini_parse(code, "i->second", "val", "ret =")
+        param.key_desc.ptype.cxx_ini_parse(
+            code, "i->first", "key", "bool key_ret ="
+        )
+        param.val_desc.ptype.cxx_ini_parse(
+            code, "i->second", "val", "bool val_ret ="
+        )
+        code("ret = key_ret && val_ret;")
         code("if (ret)")
         code("    this->${{param.name}}[key] = val;")
         code.dedent()
