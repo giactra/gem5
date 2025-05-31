@@ -128,6 +128,8 @@ class VectorMacroInst : public RiscvMacroInst
     uint8_t vtype;
     uint32_t elen;
     uint32_t vlen;
+    int oldDstIdx = -1;
+    int vmsrcIdx = -1;
 
     VectorMacroInst(const char* mnem, ExtMachInst _machInst,
                    OpClass __opClass, uint32_t _elen, uint32_t _vlen)
@@ -149,6 +151,8 @@ protected:
     uint8_t vtype;
     uint32_t elen;
     uint32_t vlen;
+    int oldDstIdx = -1;
+    int vmsrcIdx = -1;
 
     VectorMicroInst(const char *mnem, ExtMachInst _machInst, OpClass __opClass,
       uint32_t _microVl, uint32_t _microIdx, uint32_t _elen, uint32_t _vlen)
@@ -259,13 +263,14 @@ class VectorSlideMicroInst : public VectorMicroInst
   protected:
     uint32_t vdIdx;
     uint32_t vs2Idx;
+    uint32_t vs3Idx;
     VectorSlideMicroInst(const char *mnem, ExtMachInst _machInst,
                          OpClass __opClass, uint32_t _microVl,
                          uint32_t _microIdx, uint32_t _vdIdx, uint32_t _vs2Idx,
-                         uint32_t _elen, uint32_t _vlen)
+                         uint32_t _vs3Idx, uint32_t _elen, uint32_t _vlen)
         : VectorMicroInst(mnem, _machInst, __opClass, _microVl, _microIdx,
                           _elen, _vlen)
-        , vdIdx(_vdIdx), vs2Idx(_vs2Idx)
+        , vdIdx(_vdIdx), vs2Idx(_vs2Idx), vs3Idx(_vs3Idx)
     {}
 
     std::string generateDisassembly(
@@ -756,13 +761,15 @@ class VPinVdMicroInst : public VectorArithMicroInst
 {
     private:
         RegId srcRegIdxArr[1];
-        RegId destRegIdxArr[1];
-        bool hasVdOffset;
+        RegId destRegIdxArr[2];
+        const bool hasVdOffset;
+        const bool copyVs;
 
     public:
         VPinVdMicroInst(ExtMachInst _machInst, uint32_t _microIdx,
                         uint32_t _numVdPins, uint32_t _elen, uint32_t _vlen,
-                        bool _hasVdOffset=false);
+                        bool _hasVdOffset=false, bool _copyVs = false,
+                        uint32_t _vsIdx = 0);
         Fault execute(ExecContext *, trace::InstRecord *) const override;
         std::string generateDisassembly(
                 Addr pc, const loader::SymbolTable *symtab) const override;
