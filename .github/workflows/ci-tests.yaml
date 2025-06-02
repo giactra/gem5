@@ -42,7 +42,7 @@ jobs:
     unittests-all-opt:
         runs-on: [self-hosted, linux, x64]
         if: github.event.pull_request.draft == false
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         needs: [pre-commit, get-date] # only runs if pre-commit passes.
         timeout-minutes: 60
         steps:
@@ -70,7 +70,7 @@ jobs:
         if: github.event.pull_request.draft == false
     # In order to make sure the environment is exactly the same, we run in
     # the same container we use to build gem5 and run the testlib tests. This
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         needs: [pre-commit]
         steps:
             - uses: actions/checkout@v4
@@ -113,7 +113,7 @@ jobs:
         # for compilation error to be exposed.
         runs-on: [self-hosted, linux, x64]
         if: github.event.pull_request.draft == false
-        container: ghcr.io/gem5/clang-version-19:v25-0
+        container: ghcr.io/gem5/clang-version-19:latest
         needs: [pre-commit]
         timeout-minutes: 90
         steps:
@@ -125,7 +125,7 @@ jobs:
     testlib-quick-gem5-builds:
         runs-on: [self-hosted, linux, x64]
         if: github.event.pull_request.draft == false
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         needs: [pre-commit, testlib-quick-matrix, get-date]
         strategy:
             matrix:
@@ -170,7 +170,7 @@ jobs:
         name: quick-tests
         runs-on: [self-hosted, linux, x64]
         if: github.event.pull_request.draft == false
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         needs: [pre-commit, testlib-quick-matrix, testlib-quick-gem5-builds]
         timeout-minutes: 360 # 6 hours
         strategy:
@@ -217,7 +217,7 @@ jobs:
 
     gpu-tests:
         runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/gcn-gpu:v25-0
+        container: ghcr.io/gem5/gcn-gpu:latest
         timeout-minutes: 180
         needs: [pre-commit, get-date]
         steps:

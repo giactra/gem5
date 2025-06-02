@@ -20,7 +20,7 @@ jobs:
 
     build-all-gem5:
         runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         timeout-minutes: 180
         needs: get-date
 
@@ -44,7 +44,7 @@ jobs:
             matrix:
                 type: [fast, debug]
         runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         timeout-minutes: 60
         steps:
             - uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
 
     get-testlib-long-dirs:
         runs-on: ubuntu-latest
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         outputs:
             test-dirs-matrix: ${{ steps.dir-matrix.outputs.test-dirs-matrix }}
         steps:
@@ -87,7 +87,7 @@ jobs:
     testlib-long-tests:
         name: long-tests
         runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         timeout-minutes: 1440 # 24 hours for entire matrix to run
         needs:
             - build-all-gem5
@@ -131,7 +131,7 @@ jobs:
 
     gpu-tests:
         runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/gcn-gpu:v25-0
+        container: ghcr.io/gem5/gcn-gpu:latest
         timeout-minutes: 1440 # 24 hours
         needs:
             - get-date
@@ -163,7 +163,7 @@ jobs:
   # ext/sst/sst/example.py.
     sst-test:
         runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/sst-env:v25-0
+        container: ghcr.io/gem5/sst-env:latest
         timeout-minutes: 180
 
         steps:
@@ -184,7 +184,7 @@ jobs:
   # simulation with it.
     systemc-test:
         runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/systemc-env:v25-0
+        container: ghcr.io/gem5/systemc-env:latest
         timeout-minutes: 180
 
         steps:
@@ -205,7 +205,7 @@ jobs:
 
     dramsys-tests:
         runs-on: [self-hosted, linux, x64]
-        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:v25-0
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         timeout-minutes: 360 # 6 hours
         steps:
             - uses: actions/checkout@v4

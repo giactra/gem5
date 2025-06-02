@@ -18,7 +18,7 @@ jobs:
                 opts: [.opt, .fast]
         runs-on: [self-hosted, linux, x64]
         timeout-minutes: 2880 # 48 hours
-        container: ghcr.io/gem5/${{ matrix.image }}:v25-0
+        container: ghcr.io/gem5/${{ matrix.image }}:latest
         steps:
             - uses: actions/checkout@v4
             - name: Compile build/ALL/gem5${{ matrix.opts }} with ${{ matrix.image }}
@@ -36,7 +36,7 @@ jobs:
                 opts: [.opt]
         runs-on: [self-hosted, linux, x64]
         timeout-minutes: 2880 # 48 hours
-        container: ghcr.io/gem5/${{ matrix.image }}:v25-0
+        container: ghcr.io/gem5/${{ matrix.image }}:latest
         steps:
             - uses: actions/checkout@v4
             - name: Compile build/${{ matrix.gem5-compilation }}/gem5${{ matrix.opts }} with ${{ matrix.image }}
