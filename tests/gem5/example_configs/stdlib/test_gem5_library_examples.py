@@ -83,7 +83,7 @@ gem5_verify_config(
             joinpath(
                 config.base_dir,
                 "tests/gem5/example_configs",
-                "multisim/ref/simout_multisim_print_this_list.txt",
+                "stdlib/ref/simout_multisim_print_this_list.txt",
             )
         ),
     ),
