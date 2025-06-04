@@ -2643,4 +2643,15 @@ AtOp64::addressTranslation64(ThreadContext* tc,
     return std::make_pair(fault, par);
 }
 
+std::string
+IsbOp64::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
+{
+    std::stringstream ss;
+    printMnemonic(ss, "", false);
+    if (imm != 15) {
+        ccprintf(ss, "#%d", imm);
+    }
+    return ss.str();
+}
+
 } // namespace gem5

@@ -188,10 +188,10 @@ let {{
     decoder_output += BasicConstructor64.subst(unknown64Iop)
     exec_output += BasicExecute.subst(unknown64Iop)
 
-    isbIop = ArmInstObjParams("isb", "Isb64", "ArmStaticInst", "",
+    isbIop = ArmInstObjParams("isb", "Isb64", "IsbOp64", "",
                               ['IsSquashAfter'])
-    header_output += BasicDeclare.subst(isbIop)
-    decoder_output += BasicConstructor64.subst(isbIop)
+    header_output += ImmOp64Declare.subst(isbIop)
+    decoder_output += ImmOp64Constructor.subst(isbIop)
     exec_output += BasicExecute.subst(isbIop)
 
     dsbLocalIop = ArmInstObjParams("dsb", "Dsb64Local", "ArmStaticInst", "",

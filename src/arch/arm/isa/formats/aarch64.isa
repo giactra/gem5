@@ -428,7 +428,7 @@ namespace Aarch64
                           case 0x5:
                             return new Dmb64(machInst);
                           case 0x6:
-                            return new Isb64(machInst);
+                            return new Isb64(machInst, crm);
                           default:
                             return new Unknown64(machInst);
                         }
