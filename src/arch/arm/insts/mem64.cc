@@ -155,9 +155,9 @@ MemoryPostIndex64::generateDisassembly(
 {
     std::stringstream ss;
     startDisassembly(ss);
-    if (imm)
-        ccprintf(ss, "], #%d", imm);
     ccprintf(ss, "]");
+    if (imm)
+        ccprintf(ss, ", #%d", imm);
     return ss.str();
 }
 
