@@ -371,6 +371,20 @@ class IsbOp64 : public ArmISA::ArmStaticInst
             Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
+class DsbOp64 : public ArmISA::ArmStaticInst
+{
+  protected:
+    uint64_t imm;
+
+    DsbOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
+            OpClass __opClass, uint64_t _imm) :
+        ArmISA::ArmStaticInst(mnem, _machInst, __opClass), imm(_imm)
+    {}
+
+    std::string generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const override;
+};
+
 } // namespace gem5
 
 #endif
