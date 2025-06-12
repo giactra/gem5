@@ -194,6 +194,14 @@ PMU::regProbeListeners()
     panic_if(!event, "core cycle event is not present\n");
     cycleCounter.enabled = true;
     cycleCounter.attach(event);
+
+    // By enabling the event we are actually connecting the
+    // listener (See PMU::RegularEvent::enable)
+    for (auto event_id : statCounters) {
+        if (auto stat_event = getEvent(event_id); stat_event) {
+            stat_event->enable();
+        }
+    }
 }
 
 void
@@ -471,7 +479,9 @@ PMU::updateAllCounters()
 void
 PMU::PMUEvent::attachEvent(PMU::CounterState *user)
 {
-    if (userCounters.empty()) {
+    // Check if there is already a probe (either non-empty
+    // userCounters list, or pmuStats enabled)
+    if (userCounters.empty() && !pmuStats) {
         enable();
     }
     userCounters.insert(user);
@@ -495,7 +505,9 @@ PMU::PMUEvent::detachEvent(PMU::CounterState *user)
 {
     userCounters.erase(user);
 
-    if (userCounters.empty()) {
+    // Do not destroy the probe if pmuStats are listening
+    // to the event
+    if (userCounters.empty() && !pmuStats) {
         disable();
     }
 }
