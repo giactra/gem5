@@ -216,7 +216,7 @@ board = ArmBoard(
 board.set_workload(
     obtain_resource(
         (
-            "arm-ubuntu-24.04-boot-systemd"
+            "arm-ubuntu-24.04-boot-with-systemd"
             if args.systemd
             else "arm-ubuntu-24.04-boot-no-systemd"
         ),
